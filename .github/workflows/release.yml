@@ -54,8 +54,13 @@ jobs:
           BUNDLE: ${{ matrix.directory }}
           ASSET: ${{ matrix.asset }}
         run: |
-          xvfb-run -a "dist/$BUNDLE/Local-Twitch-Reporting-Dashboard" --smoke-test
           tar -C dist -czf "$ASSET" "$BUNDLE"
+          # Ubuntu's hosted runner restricts unprivileged user namespaces.
+          sudo install -d -m 0755 /opt/twitch-dashboard-smoke
+          sudo cp -a "dist/$BUNDLE/." /opt/twitch-dashboard-smoke/
+          sudo chown -R root:root /opt/twitch-dashboard-smoke
+          sudo chmod 4755 /opt/twitch-dashboard-smoke/chrome-sandbox
+          xvfb-run -a /opt/twitch-dashboard-smoke/Local-Twitch-Reporting-Dashboard --smoke-test
       - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.platform }}

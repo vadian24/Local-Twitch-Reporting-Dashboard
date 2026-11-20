@@ -11,6 +11,19 @@ A standalone desktop app for reporting on public Twitch chat archives. It reuses
 
 Extract the archive and keep its files together. Open `Local-Twitch-Reporting-Dashboard.exe` on Windows or `Local-Twitch-Reporting-Dashboard` on Linux. The Windows build is unsigned. You can download earlier versions from the [release archive](https://github.com/vadian24/Local-Twitch-Reporting-Dashboard/releases).
 
+### Linux systems that restrict user namespaces
+
+If Linux reports that the Chromium SUID sandbox helper is misconfigured, use a root-owned installation directory for the extracted app. Run these commands from the extracted Linux bundle directory:
+
+```sh
+sudo install -d -m 0755 /opt/local-twitch-reporting-dashboard
+sudo cp -a . /opt/local-twitch-reporting-dashboard/
+sudo chown -R root:root /opt/local-twitch-reporting-dashboard
+sudo chmod 4755 /opt/local-twitch-reporting-dashboard/chrome-sandbox
+```
+
+Open `/opt/local-twitch-reporting-dashboard/Local-Twitch-Reporting-Dashboard` from your file manager as your normal user.
+
 ## Run from source
 
 Install Node.js 22.12 or newer (Node.js 24 recommended), then open a terminal in the project folder:
