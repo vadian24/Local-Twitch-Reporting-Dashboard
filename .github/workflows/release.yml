@@ -1,0 +1,89 @@
+name: Build and release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-release
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build and test ${{ matrix.platform }}
+    if: github.ref == 'refs/heads/main'
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: windows-2025
+            platform: Windows
+            directory: Local-Twitch-Reporting-Dashboard-win32-x64
+            asset: Local-Twitch-Reporting-Dashboard-Windows-x64.zip
+          - runner: ubuntu-24.04
+            platform: Linux
+            directory: Local-Twitch-Reporting-Dashboard-linux-x64
+            asset: Local-Twitch-Reporting-Dashboard-Linux-x64.tar.gz
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - run: npm install --ignore-scripts
+      - run: npm test
+      - run: npm run package
+      - name: Check packaged Windows app and zip it
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          BUNDLE: ${{ matrix.directory }}
+          ASSET: ${{ matrix.asset }}
+        run: |
+          $process = Start-Process -FilePath "dist/$env:BUNDLE/Local-Twitch-Reporting-Dashboard.exe" -ArgumentList '--smoke-test' -Wait -PassThru
+          if ($process.ExitCode -ne 0) { throw "Dashboard verification exited with $($process.ExitCode)" }
+          Compress-Archive -Path "dist/$env:BUNDLE" -DestinationPath $env:ASSET
+      - name: Check packaged Linux app and archive it
+        if: runner.os == 'Linux'
+        shell: bash
+        env:
+          BUNDLE: ${{ matrix.directory }}
+          ASSET: ${{ matrix.asset }}
+        run: |
+          xvfb-run -a "dist/$BUNDLE/Local-Twitch-Reporting-Dashboard" --smoke-test
+          tar -C dist -czf "$ASSET" "$BUNDLE"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.platform }}
+          path: ${{ matrix.asset }}
+          compression-level: 0
+          if-no-files-found: error
+
+  publish:
+    name: Publish versioned downloads
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v8
+        with:
+          path: assets-to-release
+          merge-multiple: true
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          tag="v$version"
+          test -s assets-to-release/Local-Twitch-Reporting-Dashboard-Windows-x64.zip
+          test -s assets-to-release/Local-Twitch-Reporting-Dashboard-Linux-x64.tar.gz
+          gh release create "$tag" assets-to-release/* --target "$GITHUB_SHA" \
+            --title "Local Twitch Reporting Dashboard $tag" --generate-notes

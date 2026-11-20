@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'">
+  <title>Local Twitch Reporting Dashboard</title>
+  <link rel="stylesheet" href="dashboard.css">
+  <script src="date-range.js" defer></script>
+  <script src="dashboard.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <img src="../assets/icon.png" alt="" width="46" height="46">
+    <div>
+      <h1>Local Twitch Reporting Dashboard</h1>
+      <p>Community activity from archived Twitch chat</p>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <aside class="controls" aria-label="Report settings">
+      <form id="report-form">
+        <fieldset id="report-settings">
+          <legend>Report settings</legend>
+          <label for="channel">Twitch channel</label>
+          <input id="channel" placeholder="Channel username" autocomplete="off" spellcheck="false" required>
+
+          <label for="mode">Time period</label>
+          <select id="mode">
+            <option value="month">Full month</option>
+            <option value="week">One week (7 days)</option>
+          </select>
+
+          <div id="month-controls" class="date-fields">
+            <div>
+              <label for="month">Month</label>
+              <select id="month"></select>
+            </div>
+            <div>
+              <label for="year">Year</label>
+              <input id="year" type="number" min="2000" max="2100" required>
+            </div>
+          </div>
+          <div id="week-controls" hidden>
+            <label for="week-start">Week starting date</label>
+            <input id="week-start" type="date" min="2000-01-01" required>
+          </div>
+
+          <div class="section-heading">
+            <h2>Report sections</h2>
+            <button type="button" class="link-button" id="select-all">All</button>
+            <button type="button" class="link-button" id="clear-all">None</button>
+          </div>
+          <div id="section-options" class="section-options"></div>
+
+          <button id="generate" class="primary" type="submit">Generate report</button>
+        </fieldset>
+      </form>
+      <button id="cancel" type="button" hidden>Cancel request</button>
+      <progress id="progress" aria-label="Report progress" value="0" max="1" hidden></progress>
+      <p id="status" role="status">Ready to generate a report.</p>
+      <p class="source">Archive source · logs.zonian.dev</p>
+    </aside>
+
+    <section class="results" aria-labelledby="report-title">
+      <header class="results-header">
+        <div>
+          <h2 id="report-title">Report preview</h2>
+          <p id="report-period"></p>
+        </div>
+        <div class="export-tools">
+          <select id="format" aria-label="Export format" disabled>
+            <option value="txt">TXT</option>
+            <option value="csv">CSV</option>
+          </select>
+          <button type="button" id="copy" disabled>Copy</button>
+          <button type="button" id="save" disabled>Save report</button>
+        </div>
+      </header>
+      <div id="results-body">
+        <div class="empty">
+          <h3>Your report will appear here</h3>
+          <p>Enter a channel and select a time period to get started.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

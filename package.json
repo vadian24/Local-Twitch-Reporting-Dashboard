@@ -1,0 +1,23 @@
+{
+  "name": "local-twitch-reporting-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Desktop reports for archived Twitch channel activity",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test test/*.test.js",
+    "package": "electron-packager . Local-Twitch-Reporting-Dashboard --out=dist --overwrite --asar --ignore=\"/test($|/)\""
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "devDependencies": {
+    "@electron/packager": "20.3.0",
+    "electron": "45.4.1"
+  },
+  "productName": "Local Twitch Reporting Dashboard",
+  "allowScripts": {
+    "electron@45.4.1": true
+  }
+}
