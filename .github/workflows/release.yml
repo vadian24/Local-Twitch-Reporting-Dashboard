@@ -54,6 +54,20 @@ jobs:
           if ($target -ne $exe[0].FullName) { throw "The dashboard shortcut points to the wrong executable." }
           $process = Start-Process -FilePath $exe[0].FullName -ArgumentList '--smoke-test' -Wait -PassThru
           if ($process.ExitCode -ne 0) { throw "Installed dashboard exited with $($process.ExitCode)" }
+          $fixtures = Join-Path $env:RUNNER_TEMP 'dashboard-update-fixture'
+          New-Item -ItemType Directory -Path $fixtures
+          $base = 'https://github.com/vadian24/Local-Twitch-Reporting-Dashboard/releases/download/v1.4.0'
+          foreach ($asset in @($setup, 'windows-update.sigstore.json')) {
+            curl.exe --fail --silent --show-error --location --retry 2 "$base/$asset" --output "$fixtures/$asset"
+            if ($LASTEXITCODE -ne 0) { throw "Could not download verification fixture $asset." }
+          }
+          $env:ELECTRON_RUN_AS_NODE = '1'
+          $env:DASHBOARD_ASAR = Join-Path $exe[0].DirectoryName 'resources/app.asar'
+          $env:UPDATE_ASSETS = $fixtures
+          $env:RELEASE_VERSION = '1.4.0'
+          $script = Join-Path $PWD 'packaging/verify-packaged-update.js'
+          $verify = Start-Process -FilePath $exe[0].FullName -ArgumentList ('"' + $script + '"') -Wait -PassThru
+          if ($verify.ExitCode -ne 0) { throw "Packaged Windows update verification failed." }
           New-Item -ItemType Directory -Path release-assets
           Copy-Item "$output/$setup" -Destination release-assets
       - run: npm run package
@@ -103,7 +117,6 @@ jobs:
         with:
           node-version: '24'
           package-manager-cache: false
-      - run: npm install --omit=dev --ignore-scripts
       - name: Prepare signed update statement
         id: update
         shell: bash
@@ -129,23 +142,10 @@ jobs:
           RELEASE_VERSION: ${{ steps.update.outputs.version }}
         run: |
           cp -- "$BUNDLE_PATH" assets-to-release/windows-update.sigstore.json
-          node - <<'NODE'
-          const { verifyInstaller, assetName, bundleName } = require('./src/verify-update');
-          const fs = require('node:fs');
-          const assert = require('node:assert/strict');
-          const { verify } = require('sigstore');
-          const root = 'assets-to-release/';
-          const bundle = JSON.parse(fs.readFileSync(root + bundleName, 'utf8'));
-          async function check() {
-            await verifyInstaller(root + assetName, bundle, process.env.RELEASE_VERSION);
-            await assert.rejects(verify(bundle, {
-              certificateIssuer: 'https://token.actions.githubusercontent.com',
-              certificateIdentityURI: '^https://github[.]com/wrong-workflow$'
-            }));
-            console.log('Signed Windows update validated. Wrong workflow identity rejected.');
-          }
-          check().catch(error => { console.error(error); process.exitCode = 1; });
-          NODE
+          tar -xzf assets-to-release/Local-Twitch-Reporting-Dashboard-Linux-x64.tar.gz
+          bundle="$PWD/Local-Twitch-Reporting-Dashboard-linux-x64"
+          DASHBOARD_ASAR="$bundle/resources/app.asar" UPDATE_ASSETS="$PWD/assets-to-release" \
+            ELECTRON_RUN_AS_NODE=1 "$bundle/Local-Twitch-Reporting-Dashboard" packaging/verify-packaged-update.js
       - name: Publish GitHub release
         env:
           GH_TOKEN: ${{ github.token }}

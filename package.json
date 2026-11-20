@@ -1,14 +1,14 @@
 {
   "name": "local-twitch-reporting-dashboard",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "private": true,
   "description": "Desktop reports for archived Twitch channel activity",
   "main": "src/main.js",
   "scripts": {
-    "start": "electron .",
+    "start": "node packaging/patch-sigstore.js && electron .",
     "test": "node --test test/*.test.js",
-    "package": "electron-packager . Local-Twitch-Reporting-Dashboard --out=dist --overwrite --asar --ignore=\"/test($|/)\"",
-    "package:windows": "electron-builder --win nsis --x64 --publish never"
+    "package": "node packaging/patch-sigstore.js && electron-packager . Local-Twitch-Reporting-Dashboard --out=dist --overwrite --asar --ignore=\"/test($|/)\"",
+    "package:windows": "node packaging/patch-sigstore.js && electron-builder --win nsis --x64 --publish never"
   },
   "engines": {
     "node": ">=22.12.0"
@@ -51,5 +51,8 @@
   "desktopName": "com.vadian24.local-twitch-reporting-dashboard.desktop",
   "dependencies": {
     "sigstore": "5.0.0"
+  },
+  "overrides": {
+    "@sigstore/core": "4.0.1"
   }
 }

@@ -12,9 +12,11 @@ const releaseAPI = 'https://api.github.com/repos/' + repository + '/releases/lat
 const maxInstallerSize = 512 * 1024 * 1024;
 const maxProofSize = 512 * 1024;
 
-function supportsWindowsUpdates() {
+const linuxAsset = 'Local-Twitch-Reporting-Dashboard-Linux-x64.tar.gz';
+
+function supportsUpdates() {
   const { app } = require('electron');
-  return process.platform === 'win32' && app.isPackaged;
+  return app.isPackaged && (process.platform === 'win32' || process.platform === 'linux');
 }
 
 function getVersionParts(value) {
@@ -25,7 +27,7 @@ function getVersionParts(value) {
   return parts;
 }
 
-async function getWindowsUpdate(currentVersion, request = fetch) {
+async function getUpdate(currentVersion, assets, request) {
   const response = await request(releaseAPI, {
     headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'Local-Twitch-Reporting-Dashboard' },
     redirect: 'error',
@@ -41,10 +43,18 @@ async function getWindowsUpdate(currentVersion, request = fetch) {
   const firstChange = remote.findIndex((part, index) => part !== installed[index]);
   if (firstChange < 0 || remote[firstChange] < installed[firstChange]) return null;
   const bundled = name => release.assets?.some(asset => asset.name === name && asset.state === 'uploaded');
-  if (release.draft !== false || release.prerelease !== false || !bundled(assetName) || !bundled(bundleName)) {
-    throw new Error('The latest release has no verified Windows update.');
+  if (release.draft !== false || release.prerelease !== false || !assets.every(bundled)) {
+    throw new Error('The latest release has no update for this platform.');
   }
   return { version, base: 'https://github.com/' + repository + '/releases/download/' + tag + '/' };
+}
+
+function getWindowsUpdate(currentVersion, request = fetch) {
+  return getUpdate(currentVersion, [assetName, bundleName], request);
+}
+
+function getLinuxUpdate(currentVersion, request = fetch) {
+  return getUpdate(currentVersion, [linuxAsset], request);
 }
 
 function sizeLimit(limit) {
@@ -93,15 +103,17 @@ function launchInstaller(installer) {
 }
 
 let checking = false;
-async function checkWindowsUpdate(window, canRestart) {
-  const { app, dialog } = require('electron');
-  if (!supportsWindowsUpdates() || checking) return;
+async function checkUpdate(window, canRestart) {
+  const { app, dialog, shell } = require('electron');
+  if (!supportsUpdates() || checking) return;
   checking = true;
   let folder;
   let started = false;
   let phase = 'check for';
   try {
-    const update = await getWindowsUpdate(app.getVersion());
+    const onLinux = process.platform === 'linux';
+    const check = onLinux ? getLinuxUpdate : getWindowsUpdate;
+    const update = await check(app.getVersion());
     if (window.isDestroyed()) return;
     if (!update) {
       await dialog.showMessageBox(window, {
@@ -109,6 +121,18 @@ async function checkWindowsUpdate(window, canRestart) {
         message: 'You have the latest version.',
         detail: 'Installed version: ' + app.getVersion()
       });
+      return;
+    }
+    if (onLinux) {
+      const choice = await dialog.showMessageBox(window, {
+        title: 'Dashboard updates',
+        message: 'Version ' + update.version + ' is available.',
+        detail: 'Download the Linux archive, then close the dashboard before replacing its extracted folder.',
+        buttons: ['Download Linux update', 'Later'],
+        defaultId: 0,
+        cancelId: 1
+      });
+      if (choice.response === 0) await shell.openExternal(update.base + linuxAsset);
       return;
     }
     const choice = await dialog.showMessageBox(window, {
@@ -141,4 +165,4 @@ async function checkWindowsUpdate(window, canRestart) {
   }
 }
 
-module.exports = { checkWindowsUpdate, getWindowsUpdate, supportsWindowsUpdates };
+module.exports = { checkUpdate, getWindowsUpdate, getLinuxUpdate, supportsUpdates };

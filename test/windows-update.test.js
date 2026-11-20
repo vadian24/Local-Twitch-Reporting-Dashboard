@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { getWindowsUpdate } = require('../src/windows-update');
+const { getWindowsUpdate, getLinuxUpdate } = require('../src/windows-update');
 const { verifyInstaller, assetName, bundleName, predicateType } = require('../src/verify-update');
 
 const release = {
@@ -23,8 +23,8 @@ test('offers only a newer stable release with a published Windows installer', as
   });
   assert.equal(await getWindowsUpdate('1.10.0', response()), null);
   assert.equal(await getWindowsUpdate('2.0.0', response()), null);
-  await assert.rejects(getWindowsUpdate('1.9.0', response({ assets: [] })), /no verified Windows update/);
-  await assert.rejects(getWindowsUpdate('1.9.0', response({ prerelease: true })), /no verified Windows update/);
+  await assert.rejects(getWindowsUpdate('1.9.0', response({ assets: [] })), /no update for this platform/);
+  await assert.rejects(getWindowsUpdate('1.9.0', response({ prerelease: true })), /no update for this platform/);
   await assert.rejects(getWindowsUpdate('1.9.0', response({ tag_name: 'v1.10.0/other' })), /stable version/);
 });
 
@@ -60,4 +60,10 @@ test('requires a trusted signature, exact version, and matching installer bytes'
   }), /Invalid signature/);
   await writeFile(file, 'tampered installer');
   await assert.rejects(verifyInstaller(file, bundle, '1.3.0', trusted), /does not match/);
+});
+
+test('Linux checks for its own archive without requiring Windows release assets', async () => {
+  const assets = [{ name: 'Local-Twitch-Reporting-Dashboard-Linux-x64.tar.gz', state: 'uploaded' }];
+  assert.equal((await getLinuxUpdate('1.9.0', response({ assets }))).version, '1.10.0');
+  await assert.rejects(getLinuxUpdate('1.9.0', response()), /no update for this platform/);
 });
