@@ -1,6 +1,6 @@
 {
   "name": "local-twitch-reporting-dashboard",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "private": true,
   "description": "Desktop reports for archived Twitch channel activity",
   "main": "src/main.js",
