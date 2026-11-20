@@ -1,23 +1,48 @@
 {
   "name": "local-twitch-reporting-dashboard",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "description": "Desktop reports for archived Twitch channel activity",
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
     "test": "node --test test/*.test.js",
-    "package": "electron-packager . Local-Twitch-Reporting-Dashboard --out=dist --overwrite --asar --ignore=\"/test($|/)\""
+    "package": "electron-packager . Local-Twitch-Reporting-Dashboard --out=dist --overwrite --asar --ignore=\"/test($|/)\"",
+    "package:windows": "electron-builder --win nsis --x64 --publish never"
   },
   "engines": {
     "node": ">=22.12.0"
   },
   "devDependencies": {
     "@electron/packager": "20.3.0",
-    "electron": "45.4.1"
+    "electron": "45.4.1",
+    "electron-builder": "26.18.1"
   },
   "productName": "Local Twitch Reporting Dashboard",
   "allowScripts": {
     "electron@45.4.1": true
+  },
+  "author": "Argas",
+  "build": {
+    "appId": "com.vadian24.local-twitch-reporting-dashboard",
+    "executableName": "Local-Twitch-Reporting-Dashboard",
+    "directories": {
+      "output": "dist/windows"
+    },
+    "files": [
+      "src/**/*",
+      "assets/icon.png"
+    ],
+    "win": {
+      "target": "nsis",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "artifactName": "Local-Twitch-Reporting-Dashboard-Windows-x64-Setup.exe",
+      "perMachine": false,
+      "oneClick": false,
+      "allowElevation": false,
+      "differentialPackage": false
+    }
   }
 }

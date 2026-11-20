@@ -22,8 +22,6 @@ jobs:
         include:
           - runner: windows-2025
             platform: Windows
-            directory: Local-Twitch-Reporting-Dashboard-win32-x64
-            asset: Local-Twitch-Reporting-Dashboard-Windows-x64.zip
           - runner: ubuntu-24.04
             platform: Linux
             directory: Local-Twitch-Reporting-Dashboard-linux-x64
@@ -36,17 +34,26 @@ jobs:
           package-manager-cache: false
       - run: npm install --ignore-scripts
       - run: npm test
-      - run: npm run package
-      - name: Check packaged Windows app and zip it
+      - name: Build and check the Windows installer
         if: runner.os == 'Windows'
         shell: pwsh
         env:
-          BUNDLE: ${{ matrix.directory }}
-          ASSET: ${{ matrix.asset }}
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
         run: |
-          $process = Start-Process -FilePath "dist/$env:BUNDLE/Local-Twitch-Reporting-Dashboard.exe" -ArgumentList '--smoke-test' -Wait -PassThru
-          if ($process.ExitCode -ne 0) { throw "Dashboard verification exited with $($process.ExitCode)" }
-          Compress-Archive -Path "dist/$env:BUNDLE" -DestinationPath $env:ASSET
+          npm run package:windows
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $output = "dist/windows"
+          $setup = "Local-Twitch-Reporting-Dashboard-Windows-x64-Setup.exe"
+          $installer = Start-Process -FilePath "$output/$setup" -ArgumentList '/S' -Wait -PassThru
+          if ($installer.ExitCode -ne 0) { throw "Installation exited with $($installer.ExitCode)" }
+          $exe = @(Get-ChildItem "$env:LOCALAPPDATA/Programs" -Filter Local-Twitch-Reporting-Dashboard.exe -Recurse)
+          if ($exe.Count -ne 1) { throw "Could not find the per-user dashboard installation." }
+          $process = Start-Process -FilePath $exe[0].FullName -ArgumentList '--smoke-test' -Wait -PassThru
+          if ($process.ExitCode -ne 0) { throw "Installed dashboard exited with $($process.ExitCode)" }
+          New-Item -ItemType Directory -Path release-assets
+          Copy-Item "$output/$setup" -Destination release-assets
+      - run: npm run package
+        if: runner.os == 'Linux'
       - name: Check packaged Linux app and archive it
         if: runner.os == 'Linux'
         shell: bash
@@ -54,7 +61,8 @@ jobs:
           BUNDLE: ${{ matrix.directory }}
           ASSET: ${{ matrix.asset }}
         run: |
-          tar -C dist -czf "$ASSET" "$BUNDLE"
+          mkdir -p release-assets
+          tar -C dist -czf "release-assets/$ASSET" "$BUNDLE"
           # Ubuntu's hosted runner restricts unprivileged user namespaces.
           sudo install -d -m 0755 /opt/twitch-dashboard-smoke
           sudo cp -a "dist/$BUNDLE/." /opt/twitch-dashboard-smoke/
@@ -65,7 +73,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.platform }}
-          path: ${{ matrix.asset }}
+          path: release-assets/*
           compression-level: 0
           if-no-files-found: error
 
@@ -89,7 +97,7 @@ jobs:
           version="$(node -p "require('./package.json').version")"
           [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
           tag="v$version"
-          test -s assets-to-release/Local-Twitch-Reporting-Dashboard-Windows-x64.zip
+          test -s assets-to-release/Local-Twitch-Reporting-Dashboard-Windows-x64-Setup.exe
           test -s assets-to-release/Local-Twitch-Reporting-Dashboard-Linux-x64.tar.gz
           gh release create "$tag" assets-to-release/* --target "$GITHUB_SHA" \
             --title "Local Twitch Reporting Dashboard $tag" --generate-notes

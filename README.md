@@ -6,10 +6,16 @@ A standalone desktop app for reporting on public Twitch chat archives. It reuses
 
 | Platform | Latest version |
 | --- | --- |
-| Windows (64-bit) | [Download ZIP](https://github.com/vadian24/Local-Twitch-Reporting-Dashboard/releases/latest/download/Local-Twitch-Reporting-Dashboard-Windows-x64.zip) |
+| Windows (64-bit) | [Download Setup.exe](https://github.com/vadian24/Local-Twitch-Reporting-Dashboard/releases/latest/download/Local-Twitch-Reporting-Dashboard-Windows-x64-Setup.exe) |
 | Linux (64-bit, including Nobara) | [Download TAR.GZ](https://github.com/vadian24/Local-Twitch-Reporting-Dashboard/releases/latest/download/Local-Twitch-Reporting-Dashboard-Linux-x64.tar.gz) |
 
-Extract the archive and keep its files together. Open `Local-Twitch-Reporting-Dashboard.exe` on Windows or `Local-Twitch-Reporting-Dashboard` on Linux. The Windows build is unsigned. You can download earlier versions from the [release archive](https://github.com/vadian24/Local-Twitch-Reporting-Dashboard/releases).
+On Windows, run the setup executable and open **Local Twitch Reporting Dashboard** from Start. Setup installs the app for your Windows account. The installer is unsigned.
+
+On Linux, extract the archive and open the `Local-Twitch-Reporting-Dashboard` executable. Keep the extracted files together. Earlier builds are available in the [release archive](https://github.com/vadian24/Local-Twitch-Reporting-Dashboard/releases).
+
+### Windows updates
+
+If you use the v1.0.0 Windows ZIP, install v1.1.0 or newer using Setup once. In the installed app, select **Check for updates** in the header. When a newer version is available, open the GitHub release, download Windows Setup, then close the dashboard and run Setup. Save any open report before closing. Update requests contact GitHub and do not include report data.
 
 ### Linux systems that restrict user namespaces
 
@@ -38,13 +44,9 @@ The app opens in its own window. On Nobara, run these commands in Konsole from t
 
 ## Build a launchable desktop app
 
-On the OS where you want to run the app, install the dependencies as above and run:
+On Windows, run `npm run package:windows` after installing dependencies. Find the installer in `dist/windows/`.
 
-```sh
-npm run package
-```
-
-Find the resulting platform-specific folder under `dist/`. Keep all its files together. On Windows, open `Local-Twitch-Reporting-Dashboard.exe`. On Linux, open the `Local-Twitch-Reporting-Dashboard` executable or point a desktop shortcut to it. The packaged app bundles Electron, so running that copy does not require a separate Node.js setup.
+On Linux, run `npm run package`, then open the executable in the platform-specific folder under `dist/`. The packaged apps bundle Electron and run without a separate Node.js setup.
 
 ## Generate a report
 

@@ -4,6 +4,7 @@ const { app, BrowserWindow, clipboard, dialog, ipcMain } = require('electron');
 const { writeFile } = require('node:fs/promises');
 const path = require('node:path');
 const { generateReport } = require('./archive');
+const { checkWindowsUpdate, supportsWindowsUpdates } = require('./windows-update');
 
 app.setName('Local Twitch Reporting Dashboard');
 if (process.platform === 'win32') app.setAppUserModelId('com.vadian24.local-twitch-reporting-dashboard');
@@ -50,6 +51,9 @@ function handle(name, callback) {
     return callback(event, ...args);
   });
 }
+
+handle('update:supported', () => supportsWindowsUpdates());
+handle('update:check', () => checkWindowsUpdate(dashboard));
 
 handle('report:generate', async (event, options) => {
   if (activeRun) return { error: 'A report is already running.' };
@@ -100,10 +104,14 @@ async function launch() {
     await loading;
     const result = await dashboard.webContents.executeJavaScript(
       "(async () => ({ sections: document.querySelectorAll('#section-options input').length, " +
+      "updates: await window.reports.supportsUpdates(), " +
       "response: await window.reports.generate({ channel: '/' }) }))()"
     );
     if (result.sections !== 7 || result.response.error !== 'Enter a valid Twitch channel name.') {
       throw new Error('Dashboard controls or report bridge failed.');
+    }
+    if (result.updates !== (process.platform === 'win32')) {
+      throw new Error('Packaged update configuration failed.');
     }
     console.log('Dashboard smoke test passed.');
     app.exit(0);

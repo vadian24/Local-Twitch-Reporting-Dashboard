@@ -249,3 +249,19 @@ $('cancel').addEventListener('click', async () => {
 });
 $('copy').addEventListener('click', () => exportReport('copy'));
 $('save').addEventListener('click', () => exportReport('save'));
+
+const updateStatus = $('update-status');
+window.reports.supportsUpdates().then(supported => { $('updates').hidden = !supported; });
+$('check-updates').addEventListener('click', async event => {
+  const button = event.currentTarget;
+  button.disabled = true;
+  updateStatus.textContent = 'Checking GitHub…';
+  try {
+    await window.reports.checkForUpdates();
+    updateStatus.textContent = '';
+  } catch {
+    updateStatus.textContent = 'Could not check for updates.';
+  } finally {
+    button.disabled = false;
+  }
+});

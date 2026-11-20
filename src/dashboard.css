@@ -101,3 +101,6 @@ tbody tr:nth-child(even) { background: #252133; }
   .controls, .results { padding: 13px; }
   .topbar { padding: 14px 18px; }
 }
+
+#updates { margin-left: auto; text-align: right; max-width: 280px; }
+#update-status:not(:empty) { margin-top: 4px; }
