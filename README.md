@@ -13,6 +13,11 @@ On Windows, run the setup executable and open **Local Twitch Reporting Dashboard
 
 On Linux, extract the archive and open the `Local-Twitch-Reporting-Dashboard` executable. Keep the extracted files together. Earlier builds are available in the [release archive](https://github.com/vadian24/Local-Twitch-Reporting-Dashboard/releases).
 
+### Pin the dashboard to your taskbar
+
+- **Windows:** Run Setup, open **Local Twitch Reporting Dashboard** from Start, then right-click its taskbar icon and select **Pin to taskbar**.
+- **Linux (including KDE Plasma):** Extract the bundle where you want to keep it. In the extracted folder, run `bash install-launcher.sh`. Open **Local Twitch Reporting Dashboard** from the application menu, then right-click its taskbar icon and select the pin option. Run the script again if you move the extracted folder.
+
 ### Windows updates
 
 If you use the v1.0.0 Windows ZIP, install v1.1.0 or newer using Setup once. In the installed app, select **Check for updates** in the header. When a newer version is available, open the GitHub release, download Windows Setup, then close the dashboard and run Setup. Save any open report before closing. Update requests contact GitHub and do not include report data.
@@ -51,9 +56,10 @@ On Linux, run `npm run package`, then open the executable in the platform-specif
 ## Generate a report
 
 1. Enter a Twitch channel username.
-2. Choose a calendar month or a seven-day period starting on a date of your choice. Periods can cross month and year boundaries. For a period in progress, the app checks through today.
+2. Choose a calendar month, a seven-day period, or one specific day. Periods can cross month and year boundaries. For a period in progress, the app checks through today.
 3. Select the sections to include, then click **Generate report**. The preview shows totals and expandable detail tables.
-4. Choose **TXT** or **CSV** and click **Save report** or **Copy**. You can change the export format without fetching the logs again.
+4. Click a table column heading to sort, click it again to reverse the order, or type in **Filter rows** to narrow the view.
+5. Choose **TXT** or **CSV** at the top. Use **Save report** or **Copy** for the full report, or the buttons inside a section for that section alone. Exports include every row in scope and use the report's original order.
 
 | Section | Contents |
 | --- | --- |

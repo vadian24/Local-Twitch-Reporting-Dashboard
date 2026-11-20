@@ -1,6 +1,6 @@
 {
   "name": "local-twitch-reporting-dashboard",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "description": "Desktop reports for archived Twitch channel activity",
   "main": "src/main.js",
@@ -35,14 +35,18 @@
     ],
     "win": {
       "target": "nsis",
-      "signAndEditExecutable": false
+      "signExecutable": false,
+      "icon": "assets/icon.png"
     },
     "nsis": {
       "artifactName": "Local-Twitch-Reporting-Dashboard-Windows-x64-Setup.exe",
       "perMachine": false,
       "oneClick": false,
       "allowElevation": false,
-      "differentialPackage": false
+      "differentialPackage": false,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Local Twitch Reporting Dashboard"
     }
-  }
+  },
+  "desktopName": "com.vadian24.local-twitch-reporting-dashboard.desktop"
 }

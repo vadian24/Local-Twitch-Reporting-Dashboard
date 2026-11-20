@@ -32,6 +32,7 @@ function savePreferences() {
     localStorage.setItem(prefsKey, JSON.stringify({
       sections: selectedSections(),
       mode: $('mode').value,
+      singleDay: $('single-day').value,
       weekStart: $('week-start').value
     }));
   } catch {
@@ -44,11 +45,13 @@ function selectedSections() {
 }
 
 function updatePeriod() {
-  const weekly = $('mode').value === 'week';
-  $('month-controls').hidden = weekly;
-  $('year').disabled = weekly;
-  $('week-controls').hidden = !weekly;
-  $('week-start').disabled = !weekly;
+  const mode = $('mode').value;
+  for (const [period, controls, input] of [
+    ['month', 'month-controls', 'year'], ['week', 'week-controls', 'week-start'], ['day', 'day-controls', 'single-day']
+  ]) {
+    $(controls).hidden = mode !== period;
+    $(input).disabled = mode !== period;
+  }
 }
 
 function element(tag, content, className) {
@@ -79,7 +82,9 @@ function setup() {
   $('year').value = now.getFullYear();
   $('week-start').max = TwitchReportDates.todayISO(now);
   $('week-start').value = preferences.weekStart || TwitchReportDates.defaultWeekStart(now);
-  $('mode').value = preferences.mode === 'week' ? 'week' : 'month';
+  $('single-day').max = TwitchReportDates.todayISO(now);
+  $('single-day').value = preferences.singleDay || TwitchReportDates.todayISO(now);
+  if (['week', 'day'].includes(preferences.mode)) $('mode').value = preferences.mode;
   updatePeriod();
 
   $('mode').addEventListener('change', updatePeriod);
@@ -96,26 +101,84 @@ function status(message) {
   $('status').textContent = message;
 }
 
-function table(columns, rows) {
+const collator = new Intl.Collator('en-US', { numeric: true, sensitivity: 'base' });
+
+function sectionTable(id, columns, rows) {
+  const tools = element('div', undefined, 'section-tools');
+  const filter = element('input');
+  filter.type = 'search';
+  filter.placeholder = 'Filter rows';
+  filter.setAttribute('aria-label', 'Filter ' + sections[id].label);
+  filter.hidden = rows.length === 0;
+  tools.append(filter);
+  for (const [action, label] of [['copy', 'Copy section'], ['save', 'Save section']]) {
+    const button = element('button', label, 'section-export');
+    button.type = 'button';
+    button.title = 'Use the report format selected above and include all rows in this section.';
+    button.addEventListener('click', () => exportReport(action, id));
+    tools.append(button);
+  }
+
   const headers = element('tr');
   const head = element('thead');
-  for (const column of columns) {
-    const header = element('th', column);
-    header.scope = 'col';
-    headers.append(header);
-  }
-  head.append(headers);
   const body = element('tbody');
-  for (const row of rows) {
-    const tr = element('tr');
-    for (const cell of row) tr.append(element('td', cell));
-    body.append(tr);
-  }
+  const empty = element('p', '', 'section-empty');
+  empty.setAttribute('role', 'status');
   const node = element('table');
   node.append(head, body);
+  head.append(headers);
   const wrapper = element('div', undefined, 'table-wrap');
   wrapper.append(node);
-  return wrapper;
+  let sortIndex = -1;
+  let direction = 1;
+  const headingCells = columns.map((column, index) => {
+    const header = element('th');
+    header.scope = 'col';
+    const sort = element('button', column, 'sort-column');
+    sort.type = 'button';
+    sort.addEventListener('click', () => {
+      direction = index === sortIndex ? -direction : 1;
+      sortIndex = index;
+      redraw();
+    });
+    header.append(sort);
+    headers.append(header);
+    return { header, sort, column };
+  });
+
+  function redraw() {
+    const terms = filter.value.toLowerCase().trim().split(/\s+/).filter(Boolean);
+    const visible = rows.filter(row => {
+      const text = row.join(' ').toLowerCase();
+      return terms.every(term => text.includes(term));
+    });
+    if (sortIndex >= 0) {
+      visible.sort((a, b) => direction * collator.compare(a[sortIndex], b[sortIndex]));
+    }
+    headingCells.forEach(({ header, sort, column }, index) => {
+      if (index === sortIndex) {
+        header.setAttribute('aria-sort', direction === 1 ? 'ascending' : 'descending');
+        sort.textContent = column + (direction === 1 ? ' ↑' : ' ↓');
+      } else {
+        header.removeAttribute('aria-sort');
+        sort.textContent = column;
+      }
+    });
+    const contents = document.createDocumentFragment();
+    for (const row of visible) {
+      const tr = element('tr');
+      for (const cell of row) tr.append(element('td', cell));
+      contents.append(tr);
+    }
+    body.replaceChildren(contents);
+    wrapper.hidden = !rows.length;
+    empty.hidden = visible.length > 0;
+    empty.textContent = rows.length ? 'No rows match the filter.' : 'No matching activity.';
+  }
+
+  filter.addEventListener('input', redraw);
+  redraw();
+  return [tools, wrapper, empty];
 }
 
 function render(report) {
@@ -153,13 +216,13 @@ function render(report) {
       ].sort((left, right) => left[0].localeCompare(right[0]));
       details.append(element('p', diagnostics.successfulDays.length + ' with logs · '
         + diagnostics.noLogDays.length + ' without logs · ' + diagnostics.failedDays.length + ' failed'));
-      if (rows.length) details.append(table(['Date', 'Archive status'], rows));
+      details.append(...sectionTable(id, ['Date', 'Archive status'], rows));
     } else {
       const rows = data[id].map(section.row);
       if (id === 'gifts') {
         details.append(element('p', data.gifts.length + ' unique gifters · ' + data.giftAnnouncements + ' gift announcements'));
       }
-      details.append(rows.length ? table(section.columns, rows) : element('p', 'No matching activity.', 'section-empty'));
+      details.append(...sectionTable(id, section.columns, rows));
     }
     result.append(details);
   }
@@ -168,7 +231,7 @@ function render(report) {
 function updateButtons() {
   $('report-settings').disabled = busy || exporting;
   $('cancel').hidden = !busy;
-  for (const control of canExport) control.disabled = busy || exporting || !currentReport;
+  for (const control of [...canExport, ...document.querySelectorAll('.section-export')]) control.disabled = busy || exporting || !currentReport;
 }
 
 async function generate(event) {
@@ -180,6 +243,7 @@ async function generate(event) {
     year: $('year').value,
     month: $('month').value,
     weekStart: $('week-start').value,
+    singleDay: $('single-day').value,
     sections: selectedSections()
   };
   busy = true;
@@ -208,18 +272,19 @@ async function generate(event) {
   }
 }
 
-async function exportReport(action) {
+async function exportReport(action, section) {
   if (busy || exporting || !currentReport) return;
   const format = $('format').value;
+  const label = section ? sections[section].label : 'Report';
   exporting = true;
   updateButtons();
   try {
     if (action === 'save') {
-      const saved = await window.reports.save(format);
-      if (saved) status(format.toUpperCase() + ' report saved.');
+      const saved = await window.reports.save(format, section);
+      if (saved) status(label + ' saved as ' + format.toUpperCase() + '.');
     } else {
-      await window.reports.copy(format);
-      status(format.toUpperCase() + ' report copied to clipboard.');
+      await window.reports.copy(format, section);
+      status(label + ' copied to clipboard as ' + format.toUpperCase() + '.');
     }
   } catch (error) {
     status('Could not ' + action + ' report. ' + error.message);

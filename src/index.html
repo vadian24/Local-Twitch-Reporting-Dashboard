@@ -34,6 +34,7 @@
           <select id="mode">
             <option value="month">Full month</option>
             <option value="week">One week (7 days)</option>
+            <option value="day">One day</option>
           </select>
 
           <div id="month-controls" class="date-fields">
@@ -49,6 +50,11 @@
           <div id="week-controls" hidden>
             <label for="week-start">Week starting date</label>
             <input id="week-start" type="date" min="2000-01-01" required>
+          </div>
+
+          <div id="day-controls" hidden>
+            <label for="single-day">Report date</label>
+            <input id="single-day" type="date" min="2000-01-01" required>
           </div>
 
           <div class="section-heading">

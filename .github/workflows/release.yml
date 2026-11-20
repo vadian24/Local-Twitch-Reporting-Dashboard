@@ -48,6 +48,10 @@ jobs:
           if ($installer.ExitCode -ne 0) { throw "Installation exited with $($installer.ExitCode)" }
           $exe = @(Get-ChildItem "$env:LOCALAPPDATA/Programs" -Filter Local-Twitch-Reporting-Dashboard.exe -Recurse)
           if ($exe.Count -ne 1) { throw "Could not find the per-user dashboard installation." }
+          $shortcut = @(Get-ChildItem "$env:APPDATA/Microsoft/Windows/Start Menu/Programs" -Filter 'Local Twitch Reporting Dashboard.lnk' -Recurse)
+          if ($shortcut.Count -ne 1) { throw "Could not find the dashboard Start menu shortcut." }
+          $target = (New-Object -ComObject WScript.Shell).CreateShortcut($shortcut[0].FullName).TargetPath
+          if ($target -ne $exe[0].FullName) { throw "The dashboard shortcut points to the wrong executable." }
           $process = Start-Process -FilePath $exe[0].FullName -ArgumentList '--smoke-test' -Wait -PassThru
           if ($process.ExitCode -ne 0) { throw "Installed dashboard exited with $($process.ExitCode)" }
           New-Item -ItemType Directory -Path release-assets
@@ -61,6 +65,10 @@ jobs:
           BUNDLE: ${{ matrix.directory }}
           ASSET: ${{ matrix.asset }}
         run: |
+          install -m 0755 packaging/install-launcher.sh "dist/$BUNDLE/install-launcher.sh"
+          install -m 0644 assets/icon.png "dist/$BUNDLE/dashboard-icon.png"
+          XDG_DATA_HOME="$RUNNER_TEMP/dashboard-launcher-test" bash "dist/$BUNDLE/install-launcher.sh"
+          grep -Fx 'StartupWMClass=com.vadian24.local-twitch-reporting-dashboard' "$RUNNER_TEMP/dashboard-launcher-test/applications/com.vadian24.local-twitch-reporting-dashboard.desktop"
           mkdir -p release-assets
           tar -C dist -czf "release-assets/$ASSET" "$BUNDLE"
           # Ubuntu's hosted runner restricts unprivileged user namespaces.

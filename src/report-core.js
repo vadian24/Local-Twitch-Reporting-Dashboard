@@ -162,7 +162,7 @@ const TwitchReportCore = (() => {
     const monthLabel = new Date(year, Number(month) - 1, 1)
       .toLocaleString('en-US', { month: 'long', year: 'numeric' });
     return { label: period?.label || monthLabel,
-      totals: period?.mode === 'week' ? 'WEEK TOTALS' : 'MONTHLY TOTALS' };
+      totals: { day: 'DAILY TOTALS', week: 'WEEK TOTALS' }[period?.mode] || 'MONTHLY TOTALS' };
   }
 
   function textReport(channel, year, month, data, diagnostics, selection, period) {

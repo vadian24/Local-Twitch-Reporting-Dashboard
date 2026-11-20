@@ -1,13 +1,13 @@
 :root {
   color-scheme: dark;
   font: 15px/1.5 system-ui, sans-serif;
-  color: #f2effc;
-  background: #15131f;
-  --surface: #201d2d;
-  --field: #181624;
-  --border: #39334b;
-  --muted: #bdb5d0;
-  --accent: #cbb9ff;
+  color: #f2f7fa;
+  background: #101820;
+  --surface: #1b2732;
+  --field: #131f29;
+  --border: #506474;
+  --muted: #c4d3df;
+  --accent: #8ed8fa;
 }
 
 * { box-sizing: border-box; }
@@ -59,7 +59,7 @@ input:not([type="checkbox"]), #report-settings select { width: 100%; }
 button { cursor: pointer; font-weight: 600; white-space: nowrap; }
 button:hover:not(:disabled) { border-color: var(--accent); }
 :disabled { opacity: .55; cursor: default; }
-.primary { background: var(--accent); color: #21143a; width: 100%; margin-top: 16px; }
+.primary { background: var(--accent); color: #102832; width: 100%; margin-top: 16px; }
 #cancel { width: 100%; margin-top: 8px; }
 .date-fields { display: grid; grid-template-columns: minmax(0, 1fr) 80px; gap: 8px; }
 
@@ -94,7 +94,7 @@ progress { width: 100%; margin: 10px 0 0; accent-color: var(--accent); }
 table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
 th, td { padding: 7px 12px; border-top: 1px solid var(--border); overflow-wrap: anywhere; }
 th { background: var(--field); position: sticky; top: 0; color: var(--muted); }
-tbody tr:nth-child(even) { background: #252133; }
+tbody tr:nth-child(even) { background: #253542; }
 
 @media (max-width: 860px) {
   .workspace { padding: 12px; gap: 12px; grid-template-columns: 245px minmax(0, 1fr); }
@@ -104,3 +104,10 @@ tbody tr:nth-child(even) { background: #252133; }
 
 #updates { margin-left: auto; text-align: right; max-width: 280px; }
 #update-status:not(:empty) { margin-top: 4px; }
+
+.section-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; padding: 0 12px 10px; }
+.section-tools input[type="search"] { flex: 1 1 155px; width: auto; min-width: 0; }
+.section-tools button { font-size: 13px; }
+.sort-column { min-height: 26px; padding: 0; border: 0; background: transparent; font: inherit; color: inherit; font-weight: 700; white-space: normal; text-align: left; }
+.sort-column:hover { color: var(--accent); }
+#results-body th { color: #e8f1f7; }

@@ -22,7 +22,7 @@ const TwitchReportDates = (() => {
   const formatDay = date => date.toLocaleDateString('en-US', {
     month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC'
   });
-  const getDates = ({mode, year, month, weekStart, now = new Date()}) => {
+  const getDates = ({mode, year, month, weekStart, singleDay, now = new Date()}) => {
     const cutoff = isoDay(todayISO(now));
     let start, requestedEnd, label, modeName;
     if (mode === 'month') {
@@ -39,8 +39,13 @@ const TwitchReportDates = (() => {
       requestedEnd = addDays(start, 6);
       label = `${formatDay(start)} – ${formatDay(requestedEnd)}`;
       modeName = 'week';
+    } else if (mode === 'day') {
+      start = isoDay(singleDay);
+      requestedEnd = start;
+      label = formatDay(start);
+      modeName = 'day';
     } else {
-      throw new Error('Choose Full month or One week.');
+      throw new Error('Choose a report time period.');
     }
     if (start.getTime() > cutoff.getTime()) {
       throw new Error('The selected period has not started yet. Choose today or an earlier date.');
@@ -56,7 +61,8 @@ const TwitchReportDates = (() => {
     const partial = last.getTime() < requestedEnd.getTime();
     const filenamePart = modeName === 'month'
       ? `${start.getUTCFullYear()}-${pad(start.getUTCMonth() + 1)}`
-      : `week-${asISO(start)}-to-${asISO(last)}${partial ? '-partial' : ''}`;
+      : modeName === 'day' ? asISO(start)
+        : `week-${asISO(start)}-to-${asISO(last)}${partial ? '-partial' : ''}`;
     return {days, label: label + (partial && modeName === 'week' ? ' (week to date)' : ''),
       mode: modeName, startDate: asISO(start), endDate: asISO(last),
       requestedEndDate: asISO(requestedEnd), partial, filenamePart};

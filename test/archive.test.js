@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { generateReport } = require('../src/archive');
+const { generateReport, reportSection } = require('../src/archive');
 
 const sections = ['subscriptions', 'cheers', 'gifts', 'uniqueUsers', 'raids', 'streaks', 'diagnostics'];
 const options = { channel: ' @example ', mode: 'week', weekStart: '2026-10-29', sections };
@@ -106,4 +106,27 @@ test('cancels a report while waiting for the next request', async () => {
     }
   }), { name: 'AbortError' });
   assert.equal(requests, 1);
+});
+
+test('requests exactly one day and exports a single selected section', async () => {
+  const urls = [];
+  const report = await generateReport({
+    ...options, mode: 'day', singleDay: '2026-10-29', sections: ['cheers', 'subscriptions']
+  }, {
+    now,
+    request: async url => {
+      urls.push(url);
+      return Response.json({ messages: [message('Jane', 'Cheer100')] });
+    }
+  });
+  assert.equal(urls.length, 1);
+  assert.match(urls[0], /2026\/10\/29\?jsonBasic=1$/);
+  assert.equal(report.diagnostics.daysChecked, 1);
+  assert.equal(report.filename, 'example-2026-10-29-report');
+  const section = reportSection(report, 'csv', 'cheers');
+  assert.equal(section.filename, 'example-2026-10-29-report-cheers');
+  assert.match(section.text, /CHEERS - DAILY TOTALS/);
+  assert.doesNotMatch(section.text, /SUBSCRIPTIONS/);
+  assert.throws(() => reportSection(report, 'txt', 'raids'), /not in the current report/);
+  await assert.rejects(generateReport({ ...options, mode: 'day', singleDay: '2026-11-03' }, { now }), /has not started/);
 });

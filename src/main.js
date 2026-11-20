@@ -3,11 +3,16 @@
 const { app, BrowserWindow, clipboard, dialog, ipcMain } = require('electron');
 const { writeFile } = require('node:fs/promises');
 const path = require('node:path');
-const { generateReport } = require('./archive');
+const { generateReport, reportSection } = require('./archive');
 const { checkWindowsUpdate, supportsWindowsUpdates } = require('./windows-update');
 
 app.setName('Local Twitch Reporting Dashboard');
-if (process.platform === 'win32') app.setAppUserModelId('com.vadian24.local-twitch-reporting-dashboard');
+const appId = 'com.vadian24.local-twitch-reporting-dashboard';
+if (process.platform === 'win32') app.setAppUserModelId(appId);
+if (process.platform === 'linux') {
+  app.setDesktopName?.(appId + '.desktop');
+  app.commandLine.appendSwitch('class', appId);
+}
 
 let dashboard;
 let activeRun;
@@ -20,7 +25,7 @@ function createWindow() {
     height: 780,
     minWidth: 760,
     minHeight: 600,
-    backgroundColor: '#15131f',
+    backgroundColor: '#101820',
     autoHideMenuBar: true,
     icon: path.join(__dirname, '../assets/icon.png'),
     webPreferences: {
@@ -77,16 +82,17 @@ handle('report:generate', async (event, options) => {
 });
 handle('report:cancel', () => activeRun?.abort());
 
-function selectedReport(format) {
+function selectedReport(format, section) {
   if (!latest || (format !== 'txt' && format !== 'csv')) throw new Error('Generate a report first.');
+  if (section !== undefined) return reportSection(latest, format, section);
   return { filename: latest.filename, text: latest[format] };
 }
 
-handle('report:copy', (_event, format) => {
-  clipboard.writeText(selectedReport(format).text);
+handle('report:copy', (_event, format, section) => {
+  clipboard.writeText(selectedReport(format, section).text);
 });
-handle('report:save', async (_event, format) => {
-  const report = selectedReport(format);
+handle('report:save', async (_event, format, section) => {
+  const report = selectedReport(format, section);
   const { canceled, filePath } = await dialog.showSaveDialog(dashboard, {
     defaultPath: path.join(app.getPath('downloads'), report.filename + '.' + format),
     filters: [{ name: format.toUpperCase() + ' report', extensions: [format] }]

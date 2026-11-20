@@ -5,8 +5,8 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('reports', {
   generate: options => ipcRenderer.invoke('report:generate', options),
   cancel: () => ipcRenderer.invoke('report:cancel'),
-  save: format => ipcRenderer.invoke('report:save', format),
-  copy: format => ipcRenderer.invoke('report:copy', format),
+  save: (format, section) => ipcRenderer.invoke('report:save', format, section),
+  copy: (format, section) => ipcRenderer.invoke('report:copy', format, section),
   supportsUpdates: () => ipcRenderer.invoke('update:supported'),
   checkForUpdates: () => ipcRenderer.invoke('update:check'),
   onProgress: callback => {

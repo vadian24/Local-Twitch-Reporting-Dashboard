@@ -93,4 +93,15 @@ async function generateReport(options, {
   };
 }
 
-module.exports = { generateReport };
+function reportSection(report, format, section) {
+  if (!report.sections.includes(section)) throw new Error('This section is not in the current report.');
+  const { channel, period, data, diagnostics } = report;
+  const [{ year, month }] = period.days;
+  const formatter = format === 'csv' ? Core.csvReport : Core.textReport;
+  return {
+    filename: report.filename + '-' + (section === 'uniqueUsers' ? 'unique-users' : section),
+    text: formatter(channel, year, month, data, diagnostics, [section], period)
+  };
+}
+
+module.exports = { generateReport, reportSection };
