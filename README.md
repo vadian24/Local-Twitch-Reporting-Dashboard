@@ -19,6 +19,7 @@ If Linux reports that the Chromium SUID sandbox helper is misconfigured, use a r
 sudo install -d -m 0755 /opt/local-twitch-reporting-dashboard
 sudo cp -a . /opt/local-twitch-reporting-dashboard/
 sudo chown -R root:root /opt/local-twitch-reporting-dashboard
+sudo chmod -R a+rX /opt/local-twitch-reporting-dashboard
 sudo chmod 4755 /opt/local-twitch-reporting-dashboard/chrome-sandbox
 ```
 

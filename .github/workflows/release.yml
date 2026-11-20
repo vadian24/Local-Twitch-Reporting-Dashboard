@@ -59,6 +59,7 @@ jobs:
           sudo install -d -m 0755 /opt/twitch-dashboard-smoke
           sudo cp -a "dist/$BUNDLE/." /opt/twitch-dashboard-smoke/
           sudo chown -R root:root /opt/twitch-dashboard-smoke
+          sudo chmod -R a+rX /opt/twitch-dashboard-smoke
           sudo chmod 4755 /opt/twitch-dashboard-smoke/chrome-sandbox
           xvfb-run -a /opt/twitch-dashboard-smoke/Local-Twitch-Reporting-Dashboard --smoke-test
       - uses: actions/upload-artifact@v7
