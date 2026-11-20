@@ -16,7 +16,7 @@ async function check() {
   if (existsSync(linuxProof)) {
     const archive = path.join(process.env.UPDATE_ASSETS, linuxAsset);
     await verifyLinuxArchive(archive, JSON.parse(readFileSync(linuxProof, 'utf8')), process.env.RELEASE_VERSION);
-    const { mkdtemp, mkdir, readFile, rm, writeFile } = require('node:fs/promises');
+    const { mkdtemp, mkdir, readFile, rm, writeFile } = require('original-fs').promises;
     const folder = await mkdtemp(path.join(require('node:os').tmpdir(), 'dashboard-release-test-'));
     try {
       const { stageLinuxUpdate, applyLinuxUpdate } = requirePackaged('./linux-update');

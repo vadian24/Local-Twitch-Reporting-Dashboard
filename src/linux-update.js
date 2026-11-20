@@ -2,7 +2,9 @@
 
 const { execFile, spawn } = require('node:child_process');
 const { constants } = require('node:fs');
-const { access, lstat, mkdir, mkdtemp, readFile, realpath, rename, rm, rmdir, writeFile } = require('node:fs/promises');
+const { access, lstat, mkdir, mkdtemp, realpath, rename, rm, rmdir, writeFile } =
+  (process.versions.electron ? require('original-fs') : require('node:fs')).promises;
+const { readFile } = require('node:fs/promises');
 const path = require('node:path');
 const { setTimeout: delay } = require('node:timers/promises');
 const { promisify } = require('node:util');
