@@ -1,13 +1,14 @@
 :root {
   color-scheme: light;
   font: 15px/1.5 system-ui, sans-serif;
-  color: #162b39;
-  background: #edf3f8;
-  --surface: #fff;
-  --field: #f6f9fc;
-  --border: #a9bdcb;
-  --muted: #405968;
-  --accent: #07658f;
+  color: #1e3440;
+  background: #dce8ee;
+  --surface: #edf2f2;
+  --topbar: #d2e4e7;
+  --field: #c5dce0;
+  --border: #a4bec6;
+  --muted: #415967;
+  --accent: #285c68;
 }
 
 * { box-sizing: border-box; }
@@ -23,7 +24,7 @@ h2 { font-size: 20px; letter-spacing: -.02em; }
   gap: 14px;
   padding: 20px 26px;
   border-bottom: 1px solid var(--border);
-  background: var(--surface);
+  background: var(--topbar);
 }
 .topbar img { border-radius: 10px; }
 .topbar p, #report-period, .source { color: var(--muted); font-size: 13px; }
@@ -61,7 +62,7 @@ input:not([type="checkbox"]), #report-settings select { width: 100%; }
 button { cursor: pointer; font-weight: 600; white-space: nowrap; }
 button:hover:not(:disabled) { border-color: var(--accent); }
 :disabled { opacity: .55; cursor: default; }
-.primary { background: var(--accent); color: #fff; width: 100%; margin-top: 16px; }
+.primary { background: var(--accent); color: #edf5f4; width: 100%; margin-top: 16px; }
 #cancel { width: 100%; margin-top: 8px; }
 .date-fields { display: grid; grid-template-columns: minmax(0, 1fr) 80px; gap: 8px; }
 
@@ -96,7 +97,7 @@ progress { width: 100%; margin: 10px 0 0; accent-color: var(--accent); }
 table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
 th, td { padding: 7px 12px; border-top: 1px solid var(--border); overflow-wrap: anywhere; }
 th { background: var(--field); position: sticky; top: 0; color: var(--muted); }
-tbody tr:nth-child(even) { background: #f1f6fa; }
+tbody tr:nth-child(even) { background: #e0edef; }
 
 .app-version { margin-left: 6px; font-size: 13px; color: var(--muted); font-weight: 600; }
 .viewers-panel { position: sticky; top: 16px; min-height: 510px; }
@@ -116,6 +117,7 @@ tbody tr:nth-child(even) { background: #f1f6fa; }
   .topbar { padding: 14px 18px; }
 }
 
+#check-updates { background: var(--surface); }
 #updates { margin-left: auto; text-align: right; max-width: 280px; }
 #update-status:not(:empty) { margin-top: 4px; }
 
@@ -124,4 +126,4 @@ tbody tr:nth-child(even) { background: #f1f6fa; }
 .section-tools button { font-size: 13px; }
 .sort-column { min-height: 26px; padding: 0; border: 0; background: transparent; font: inherit; color: inherit; font-weight: 700; white-space: normal; text-align: left; }
 .sort-column:hover { color: var(--accent); }
-#results-body th { color: #233e4f; }
+#results-body th { color: #1e3440; }
