@@ -1,6 +1,6 @@
 {
   "name": "local-twitch-reporting-dashboard",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "private": true,
   "description": "Desktop reports for archived Twitch channel activity",
   "main": "src/main.js",
@@ -48,5 +48,8 @@
       "shortcutName": "Local Twitch Reporting Dashboard"
     }
   },
-  "desktopName": "com.vadian24.local-twitch-reporting-dashboard.desktop"
+  "desktopName": "com.vadian24.local-twitch-reporting-dashboard.desktop",
+  "dependencies": {
+    "sigstore": "5.0.0"
+  }
 }

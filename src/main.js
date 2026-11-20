@@ -58,7 +58,7 @@ function handle(name, callback) {
 }
 
 handle('update:supported', () => supportsWindowsUpdates());
-handle('update:check', () => checkWindowsUpdate(dashboard));
+handle('update:check', () => checkWindowsUpdate(dashboard, () => !activeRun));
 
 handle('report:generate', async (event, options) => {
   if (activeRun) return { error: 'A report is already running.' };

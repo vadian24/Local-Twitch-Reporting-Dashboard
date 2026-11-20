@@ -316,6 +316,7 @@ $('copy').addEventListener('click', () => exportReport('copy'));
 $('save').addEventListener('click', () => exportReport('save'));
 
 const updateStatus = $('update-status');
+window.reports.onUpdateStatus(message => { updateStatus.textContent = message; });
 window.reports.supportsUpdates().then(supported => { $('updates').hidden = !supported; });
 $('check-updates').addEventListener('click', async event => {
   const button = event.currentTarget;
@@ -323,7 +324,7 @@ $('check-updates').addEventListener('click', async event => {
   updateStatus.textContent = 'Checking GitHub…';
   try {
     await window.reports.checkForUpdates();
-    updateStatus.textContent = '';
+    if (updateStatus.textContent === 'Checking GitHub…') updateStatus.textContent = '';
   } catch {
     updateStatus.textContent = 'Could not check for updates.';
   } finally {

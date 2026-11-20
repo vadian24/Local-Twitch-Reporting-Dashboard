@@ -20,7 +20,7 @@ On Linux, extract the archive and open the `Local-Twitch-Reporting-Dashboard` ex
 
 ### Windows updates
 
-If you use the v1.0.0 Windows ZIP, install v1.1.0 or newer using Setup once. In the installed app, select **Check for updates** in the header. When a newer version is available, open the GitHub release, download Windows Setup, then close the dashboard and run Setup. Save any open report before closing. Update requests contact GitHub and do not include report data.
+If you use v1.2.0 or earlier, run Setup for v1.3.0 or newer once to get the in-app updater. Select **Check for updates**, then **Update and restart** when a newer version is available. Save any open report before updating. The dashboard downloads the installer, verifies its signed version and SHA-256 digest against the repository's GitHub release workflow identity, then installs and reopens. Update requests go to GitHub and Sigstore and contain no report data.
 
 ### Linux systems that restrict user namespaces
 

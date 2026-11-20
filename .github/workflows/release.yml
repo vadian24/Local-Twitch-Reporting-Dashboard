@@ -91,12 +91,53 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: write
+      id-token: write
+      attestations: write
     steps:
       - uses: actions/checkout@v6
       - uses: actions/download-artifact@v8
         with:
           path: assets-to-release
           merge-multiple: true
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - run: npm install --omit=dev --ignore-scripts
+      - name: Prepare signed update statement
+        id: update
+        shell: bash
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          setup="Local-Twitch-Reporting-Dashboard-Windows-x64-Setup.exe"
+          digest="$(sha256sum "assets-to-release/$setup" | cut -d' ' -f1)"
+          echo "digest=sha256:$digest" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - name: Sign Windows update with release workflow identity
+        id: attestation
+        uses: actions/attest@v4
+        with:
+          subject-name: Local-Twitch-Reporting-Dashboard-Windows-x64-Setup.exe
+          subject-digest: ${{ steps.update.outputs.digest }}
+          predicate-type: https://github.com/vadian24/Local-Twitch-Reporting-Dashboard/windows-update/v1
+          predicate: '{"version":"${{ steps.update.outputs.version }}"}'
+      - name: Verify signed update before publishing
+        shell: bash
+        env:
+          BUNDLE_PATH: ${{ steps.attestation.outputs.bundle-path }}
+          RELEASE_VERSION: ${{ steps.update.outputs.version }}
+        run: |
+          cp -- "$BUNDLE_PATH" assets-to-release/windows-update.sigstore.json
+          node - <<'NODE'
+          const { verifyInstaller, assetName, bundleName } = require('./src/verify-update');
+          const fs = require('node:fs');
+          const root = 'assets-to-release/';
+          const bundle = JSON.parse(fs.readFileSync(root + bundleName, 'utf8'));
+          verifyInstaller(root + assetName, bundle, process.env.RELEASE_VERSION)
+            .then(() => console.log('Signed Windows update validated.'))
+            .catch(error => { console.error(error); process.exitCode = 1; });
+          NODE
       - name: Publish GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
