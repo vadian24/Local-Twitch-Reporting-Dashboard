@@ -6,10 +6,10 @@ A standalone desktop app for reporting on public Twitch chat archives. It reuses
 
 | Platform | Latest version |
 | --- | --- |
-| Windows (64-bit) | [Download Setup.exe](https://github.com/vadian24/Local-Twitch-Reporting-Dashboard/releases/latest/download/Local-Twitch-Reporting-Dashboard-Windows-x64-Setup.exe) |
+| Windows (64-bit) | [Download Setup.exe](https://github.com/vadian24/Local-Twitch-Reporting-Dashboard/releases/latest/download/Local-Twitch-Reporting-Dashboard-Windows-x64-Setup.exe) · [Download portable ZIP](https://github.com/vadian24/Local-Twitch-Reporting-Dashboard/releases/latest/download/Local-Twitch-Reporting-Dashboard-Windows-x64.zip) |
 | Linux (64-bit, including Nobara) | [Download TAR.GZ](https://github.com/vadian24/Local-Twitch-Reporting-Dashboard/releases/latest/download/Local-Twitch-Reporting-Dashboard-Linux-x64.tar.gz) |
 
-On Windows, run the setup executable and open **Local Twitch Reporting Dashboard** from Start. Setup installs the app for your Windows account. The installer is unsigned.
+On Windows, run the setup executable and open **Local Twitch Reporting Dashboard** from Start. Setup installs the app for your Windows account. The installer is unsigned. For portable use, extract the ZIP and open the dashboard executable inside it. The portable ZIP uses manual replacement for updates.
 
 On Linux, extract the archive and open the `Local-Twitch-Reporting-Dashboard` executable. Keep the extracted files together. Earlier builds are available in the [release archive](https://github.com/vadian24/Local-Twitch-Reporting-Dashboard/releases).
 
@@ -24,7 +24,7 @@ If you use v1.4.0 or earlier, run Setup for v1.4.1 or newer once to get the corr
 
 ### Linux updates
 
-Select **Check for updates** to find the latest Linux archive. Download the archive, close the dashboard, and replace the extracted bundle in the same location. User preferences are stored outside the bundle. Run `bash install-launcher.sh` again if you move the bundle.
+Install v1.5.0 once by extracting the Linux bundle. In v1.5.0 and later, select **Check for updates → Update and restart**. The dashboard verifies the signed update, replaces the app bundle at the same path, and reopens it. User preferences are stored outside the bundle. The previous bundle is retained in a hidden update directory beside the app. In-app replacement requires a user-owned bundle in a writable parent directory. Root-owned installs and installations with a setuid sandbox helper require manual updates.
 
 ### Linux systems that restrict user namespaces
 

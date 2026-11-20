@@ -3,7 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { getWindowsUpdate, getLinuxUpdate } = require('../src/windows-update');
-const { verifyInstaller, assetName, bundleName, predicateType } = require('../src/verify-update');
+const { verifyInstaller, assetName, bundleName, predicateType, linuxAsset, linuxBundleName } = require('../src/verify-update');
 
 const release = {
   tag_name: 'v1.10.0',
@@ -63,7 +63,8 @@ test('requires a trusted signature, exact version, and matching installer bytes'
 });
 
 test('Linux checks for its own archive without requiring Windows release assets', async () => {
-  const assets = [{ name: 'Local-Twitch-Reporting-Dashboard-Linux-x64.tar.gz', state: 'uploaded' }];
+  const assets = [linuxAsset, linuxBundleName].map(name => ({ name, state: 'uploaded' }));
   assert.equal((await getLinuxUpdate('1.9.0', response({ assets }))).version, '1.10.0');
+  await assert.rejects(getLinuxUpdate('1.9.0', response({ assets: assets.slice(0, 1) })), /no update for this platform/);
   await assert.rejects(getLinuxUpdate('1.9.0', response()), /no update for this platform/);
 });

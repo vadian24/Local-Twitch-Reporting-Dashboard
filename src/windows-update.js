@@ -1,18 +1,21 @@
 'use strict';
 
 const { spawn } = require('node:child_process');
-const { createWriteStream } = require('node:fs');
+const { createWriteStream, existsSync } = require('node:fs');
 const { mkdtemp, rm } = require('node:fs/promises');
 const path = require('node:path');
 const { Readable, Transform } = require('node:stream');
 const { pipeline } = require('node:stream/promises');
-const { assetName, bundleName, repository, verifyInstaller } = require('./verify-update');
+const {
+  assetName, bundleName, linuxAsset, linuxBundleName, repository, verifyInstaller, verifyLinuxArchive
+} = require('./verify-update');
+const { prepareLinuxUpdate, stageLinuxUpdate, launchLinuxUpdater } = require('./linux-update');
 
 const releaseAPI = 'https://api.github.com/repos/' + repository + '/releases/latest';
 const maxInstallerSize = 512 * 1024 * 1024;
 const maxProofSize = 512 * 1024;
 
-const linuxAsset = 'Local-Twitch-Reporting-Dashboard-Linux-x64.tar.gz';
+const portableAsset = 'Local-Twitch-Reporting-Dashboard-Windows-x64.zip';
 
 function supportsUpdates() {
   const { app } = require('electron');
@@ -54,7 +57,7 @@ function getWindowsUpdate(currentVersion, request = fetch) {
 }
 
 function getLinuxUpdate(currentVersion, request = fetch) {
-  return getUpdate(currentVersion, [linuxAsset], request);
+  return getUpdate(currentVersion, [linuxAsset, linuxBundleName], request);
 }
 
 function sizeLimit(limit) {
@@ -74,19 +77,19 @@ async function downloadAsset(base, name) {
   return Readable.fromWeb(response.body);
 }
 
-async function downloadUpdate(update, installer) {
-  const proofStream = await downloadAsset(update.base, bundleName);
+async function downloadUpdate(update, target, asset, proof, verify) {
+  const proofStream = await downloadAsset(update.base, proof);
   const chunks = [];
   const limited = sizeLimit(maxProofSize);
   limited.on('data', chunk => chunks.push(chunk));
   await pipeline(proofStream, limited);
   const bundle = JSON.parse(Buffer.concat(chunks).toString('utf8'));
   await pipeline(
-    await downloadAsset(update.base, assetName),
+    await downloadAsset(update.base, asset),
     sizeLimit(maxInstallerSize),
-    createWriteStream(installer, { flags: 'wx', mode: 0o600 })
+    createWriteStream(target, { flags: 'wx', mode: 0o600 })
   );
-  await verifyInstaller(installer, bundle, update.version);
+  await verify(target, bundle, update.version);
 }
 
 function launchInstaller(installer) {
@@ -112,8 +115,9 @@ async function checkUpdate(window, canRestart) {
   let phase = 'check for';
   try {
     const onLinux = process.platform === 'linux';
-    const check = onLinux ? getLinuxUpdate : getWindowsUpdate;
-    const update = await check(app.getVersion());
+    const portable = !onLinux && existsSync(path.join(process.resourcesPath, 'portable-mode'));
+    const update = portable ? await getUpdate(app.getVersion(), [portableAsset], fetch)
+      : await (onLinux ? getLinuxUpdate : getWindowsUpdate)(app.getVersion());
     if (window.isDestroyed()) return;
     if (!update) {
       await dialog.showMessageBox(window, {
@@ -123,16 +127,16 @@ async function checkUpdate(window, canRestart) {
       });
       return;
     }
-    if (onLinux) {
+    if (portable) {
       const choice = await dialog.showMessageBox(window, {
         title: 'Dashboard updates',
         message: 'Version ' + update.version + ' is available.',
-        detail: 'Download the Linux archive, then close the dashboard before replacing its extracted folder.',
-        buttons: ['Download Linux update', 'Later'],
+        detail: 'Download the portable ZIP, then close the dashboard before replacing its extracted folder.',
+        buttons: ['Download portable ZIP', 'Later'],
         defaultId: 0,
         cancelId: 1
       });
-      if (choice.response === 0) await shell.openExternal(update.base + linuxAsset);
+      if (choice.response === 0) await shell.openExternal(update.base + portableAsset);
       return;
     }
     const choice = await dialog.showMessageBox(window, {
@@ -146,12 +150,18 @@ async function checkUpdate(window, canRestart) {
     if (choice.response !== 0 || window.isDestroyed()) return;
     phase = 'install';
     window.webContents.send('update:status', 'Downloading and verifying update…');
-    folder = await mkdtemp(path.join(app.getPath('temp'), 'twitch-dashboard-update-'));
-    const installer = path.join(folder, assetName);
-    await downloadUpdate(update, installer);
+    const exe = app.getPath('exe');
+    folder = onLinux ? await prepareLinuxUpdate(exe)
+      : await mkdtemp(path.join(app.getPath('temp'), 'twitch-dashboard-update-'));
+    const file = path.join(folder, onLinux ? 'update.tar.gz' : assetName);
+    await downloadUpdate(update, file,
+      onLinux ? linuxAsset : assetName, onLinux ? linuxBundleName : bundleName,
+      onLinux ? verifyLinuxArchive : verifyInstaller);
+    const staged = onLinux ? await stageLinuxUpdate(folder, file) : null;
     if (window.isDestroyed()) return;
     if (!canRestart()) throw new Error('Finish the current report before updating.');
-    await launchInstaller(installer);
+    if (onLinux) await launchLinuxUpdater(folder, staged, exe);
+    else await launchInstaller(file);
     started = true;
     app.quit();
   } catch (error) {

@@ -70,6 +70,14 @@ jobs:
           if ($verify.ExitCode -ne 0) { throw "Packaged Windows update verification failed." }
           New-Item -ItemType Directory -Path release-assets
           Copy-Item "$output/$setup" -Destination release-assets
+          Remove-Item Env:ELECTRON_RUN_AS_NODE
+          New-Item -ItemType File -Path "$output/win-unpacked/resources/portable-mode"
+          Compress-Archive -Path "$output/win-unpacked/*" -DestinationPath 'release-assets/Local-Twitch-Reporting-Dashboard-Windows-x64.zip'
+          $portable = Join-Path $env:RUNNER_TEMP 'dashboard-portable-test'
+          Expand-Archive 'release-assets/Local-Twitch-Reporting-Dashboard-Windows-x64.zip' -DestinationPath $portable
+          if (-not (Test-Path "$portable/resources/portable-mode")) { throw "Portable build marker is missing." }
+          $portableApp = Start-Process -FilePath "$portable/Local-Twitch-Reporting-Dashboard.exe" -ArgumentList '--smoke-test' -Wait -PassThru
+          if ($portableApp.ExitCode -ne 0) { throw "Portable dashboard failed to launch." }
       - run: npm run package
         if: runner.os == 'Linux'
       - name: Check packaged Linux app and archive it
@@ -127,6 +135,8 @@ jobs:
           digest="$(sha256sum "assets-to-release/$setup" | cut -d' ' -f1)"
           echo "digest=sha256:$digest" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
+          linux_digest="$(sha256sum assets-to-release/Local-Twitch-Reporting-Dashboard-Linux-x64.tar.gz | cut -d' ' -f1)"
+          echo "linux_digest=sha256:$linux_digest" >> "$GITHUB_OUTPUT"
       - name: Sign Windows update with release workflow identity
         id: attestation
         uses: actions/attest@v4
@@ -135,13 +145,23 @@ jobs:
           subject-digest: ${{ steps.update.outputs.digest }}
           predicate-type: https://github.com/vadian24/Local-Twitch-Reporting-Dashboard/windows-update/v1
           predicate: '{"version":"${{ steps.update.outputs.version }}"}'
-      - name: Verify signed update before publishing
+      - name: Sign Linux update with release workflow identity
+        id: linux-attestation
+        uses: actions/attest@v4
+        with:
+          subject-name: Local-Twitch-Reporting-Dashboard-Linux-x64.tar.gz
+          subject-digest: ${{ steps.update.outputs.linux_digest }}
+          predicate-type: https://github.com/vadian24/Local-Twitch-Reporting-Dashboard/linux-update/v1
+          predicate: '{"version":"${{ steps.update.outputs.version }}"}'
+      - name: Verify signed updates before publishing
         shell: bash
         env:
           BUNDLE_PATH: ${{ steps.attestation.outputs.bundle-path }}
+          LINUX_BUNDLE_PATH: ${{ steps.linux-attestation.outputs.bundle-path }}
           RELEASE_VERSION: ${{ steps.update.outputs.version }}
         run: |
           cp -- "$BUNDLE_PATH" assets-to-release/windows-update.sigstore.json
+          cp -- "$LINUX_BUNDLE_PATH" assets-to-release/linux-update.sigstore.json
           tar -xzf assets-to-release/Local-Twitch-Reporting-Dashboard-Linux-x64.tar.gz
           bundle="$PWD/Local-Twitch-Reporting-Dashboard-linux-x64"
           DASHBOARD_ASAR="$bundle/resources/app.asar" UPDATE_ASSETS="$PWD/assets-to-release" \
@@ -156,5 +176,7 @@ jobs:
           tag="v$version"
           test -s assets-to-release/Local-Twitch-Reporting-Dashboard-Windows-x64-Setup.exe
           test -s assets-to-release/Local-Twitch-Reporting-Dashboard-Linux-x64.tar.gz
+          test -s assets-to-release/Local-Twitch-Reporting-Dashboard-Windows-x64.zip
+          test -s assets-to-release/linux-update.sigstore.json
           gh release create "$tag" assets-to-release/* --target "$GITHUB_SHA" \
             --title "Local Twitch Reporting Dashboard $tag" --generate-notes
