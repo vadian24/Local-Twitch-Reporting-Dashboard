@@ -47,7 +47,7 @@ test('requires a trusted signature, exact version, and matching installer bytes'
     payloadType: 'application/vnd.in-toto+json',
     payload: Buffer.from(JSON.stringify(statement)).toString('base64')
   } };
-  const trusted = async (_bundle, _data, policy) => {
+  const trusted = async (_bundle, policy) => {
     assert.equal(policy.certificateIssuer, 'https://token.actions.githubusercontent.com');
     const identity = new RegExp(policy.certificateIdentityURI);
     assert.match('https://github.com/vadian24/Local-Twitch-Reporting-Dashboard/.github/workflows/release.yml@refs/heads/main', identity);

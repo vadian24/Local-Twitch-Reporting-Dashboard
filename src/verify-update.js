@@ -15,10 +15,10 @@ const verificationPolicy = {
 async function verifyInstaller(file, bundle, version, verify = require('sigstore').verify) {
   // A DSSE bundle signs the statement. The updater separately matches its
   // signed subject digest to the actual installer bytes before execution.
-  if (bundle.dsseEnvelope?.payloadType !== 'application/vnd.in-toto+json') {
+  if (bundle.messageSignature || bundle.dsseEnvelope?.payloadType !== 'application/vnd.in-toto+json') {
     throw new Error('Expected a signed update statement.');
   }
-  await verify(bundle, undefined, verificationPolicy);
+  await verify(bundle, verificationPolicy);
   const signed = JSON.parse(Buffer.from(bundle.dsseEnvelope.payload, 'base64').toString('utf8'));
   if (signed._type !== 'https://in-toto.io/Statement/v1' ||
       signed.predicateType !== predicateType || signed.predicate?.version !== version ||
