@@ -49,7 +49,9 @@ test('preserves extension counts, ordering and export format for a partial week 
   assert.deepEqual(report.data.uniqueUsers, [
     { user: 'Alice', activity: 'Sub, Cheer, Gifted Sub' }, { user: 'bob', activity: 'Cheer' }
   ]);
-  assert.deepEqual(report.data.raids, [{ user: 'Delta' }]);
+  assert.deepEqual(report.data.raids, [{ user: 'Delta', count: 2 }]);
+  assert.match(reportSection(report, 'txt', 'raids').text, /Delta \| 2/);
+  assert.match(reportSection(report, 'csv', 'raids').text, /"Raiding Streamer","Times Raided"\r\n"Delta","2"/);
   assert.deepEqual(report.data.streaks, [{ user: 'Echo', count: 30 }, { user: 'Gamma', count: 10 }]);
   assert.deepEqual(report.diagnostics.noLogDays, ['2026-10-30']);
   assert.deepEqual(report.diagnostics.failedDays.map(item => item.status), [200, 403]);

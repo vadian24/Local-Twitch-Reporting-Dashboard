@@ -13,7 +13,7 @@
   <header class="topbar">
     <img src="../assets/icon.png" alt="" width="46" height="46">
     <div>
-      <h1>Local Twitch Reporting Dashboard</h1>
+      <h1>Local Twitch Reporting Dashboard <span id="app-version" class="app-version"></span></h1>
       <p>Community activity from archived Twitch chat</p>
     </div>
     <div id="updates" hidden>
@@ -95,6 +95,14 @@
         </div>
       </div>
     </section>
+
+    <aside id="viewers-panel" class="viewers-panel" aria-labelledby="viewers-title">
+      <h2 id="viewers-title">Unique Viewers</h2>
+      <p id="viewers-count">Subscribers, cheerers, and gifters</p>
+      <div id="viewers-body">
+        <p class="viewer-empty">Generate a report to see viewer activity.</p>
+      </div>
+    </aside>
   </main>
 </body>
 </html>

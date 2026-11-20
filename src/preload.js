@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld('reports', {
   cancel: () => ipcRenderer.invoke('report:cancel'),
   save: (format, section) => ipcRenderer.invoke('report:save', format, section),
   copy: (format, section) => ipcRenderer.invoke('report:copy', format, section),
+  appVersion: () => ipcRenderer.invoke('app:version'),
   supportsUpdates: () => ipcRenderer.invoke('update:supported'),
   checkForUpdates: () => ipcRenderer.invoke('update:check'),
   onUpdateStatus: callback => {

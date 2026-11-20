@@ -20,12 +20,12 @@ let latest;
 
 function createWindow() {
   dashboard = new BrowserWindow({
-    title: 'Local Twitch Reporting Dashboard',
-    width: 1160,
+    title: app.getName() + ' v' + app.getVersion(),
+    width: 1290,
     height: 780,
     minWidth: 760,
     minHeight: 600,
-    backgroundColor: '#101820',
+    backgroundColor: '#edf3f8',
     autoHideMenuBar: true,
     icon: path.join(__dirname, '../assets/icon.png'),
     webPreferences: {
@@ -35,6 +35,7 @@ function createWindow() {
       nodeIntegration: false
     }
   });
+  dashboard.on('page-title-updated', event => event.preventDefault());
   const contents = dashboard.webContents;
   contents.setWindowOpenHandler(() => ({ action: 'deny' }));
   contents.on('will-navigate', event => event.preventDefault());
@@ -57,6 +58,7 @@ function handle(name, callback) {
   });
 }
 
+handle('app:version', () => app.getVersion());
 handle('update:supported', () => supportsWindowsUpdates());
 handle('update:check', () => checkWindowsUpdate(dashboard, () => !activeRun));
 
@@ -110,7 +112,8 @@ async function launch() {
     await loading;
     const result = await dashboard.webContents.executeJavaScript(
       "(async () => ({ sections: document.querySelectorAll('#section-options input').length, " +
-      "updates: await window.reports.supportsUpdates(), " +
+      "updates: await window.reports.supportsUpdates(), version: await window.reports.appVersion(), " +
+      "viewersPanel: Boolean(document.getElementById('viewers-body')), " +
       "response: await window.reports.generate({ channel: '/' }) }))()"
     );
     if (result.sections !== 7 || result.response.error !== 'Enter a valid Twitch channel name.') {
@@ -118,6 +121,10 @@ async function launch() {
     }
     if (result.updates !== (process.platform === 'win32')) {
       throw new Error('Packaged update configuration failed.');
+    }
+    if (!result.viewersPanel || result.version !== app.getVersion() ||
+        !dashboard.getTitle().endsWith(' v' + app.getVersion())) {
+      throw new Error('Dashboard title or viewer panel failed.');
     }
     console.log('Dashboard smoke test passed.');
     app.exit(0);

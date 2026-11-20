@@ -71,7 +71,8 @@ const TwitchReportCore = (() => {
     if (raid) {
       const user = raid[1];
       const key = keyOf(user);
-      if (!state.raiders.has(key)) state.raiders.set(key, { user });
+      if (!state.raiders.has(key)) state.raiders.set(key, { user, count: 0 });
+      state.raiders.get(key).count++;
       return;
     }
 
@@ -188,8 +189,8 @@ const TwitchReportCore = (() => {
       for (const e of data.uniqueUsers) lines.push(`${e.user} | ${e.activity}`);
     }
     if (selected.has('raids')) {
-      lines.push('', '# RAIDS', '# RAIDING STREAMER', '');
-      for (const e of data.raids) lines.push(e.user);
+      lines.push('', '# RAIDS', '# RAIDING STREAMER | TIMES RAIDED', '');
+      for (const e of data.raids) lines.push(`${e.user} | ${e.count}`);
     }
     if (selected.has('streaks')) {
       lines.push('', '# WATCH STREAKS - HIGHEST OBSERVED PER USER', '# USER | CONSECUTIVE STREAMS', '');
@@ -247,7 +248,7 @@ const TwitchReportCore = (() => {
       ]);
     }
     if (selected.has('raids')) {
-      section('RAIDS', ['Raiding Streamer'], data.raids.map(e => [e.user]));
+      section('RAIDS', ['Raiding Streamer', 'Times Raided'], data.raids.map(e => [e.user, e.count]));
     }
     if (selected.has('streaks')) {
       section('WATCH STREAKS - HIGHEST OBSERVED PER USER', ['Username', 'Consecutive Streams'],

@@ -66,8 +66,8 @@ On Linux, run `npm run package`, then open the executable in the platform-specif
 | Subscriptions | Subscription events by timestamp, with username and tier or Prime |
 | Cheers | One row per cheerer, with summed bits for the period |
 | Gifted subs | One row per gifter, with gift totals, number of gifters, and number of gift announcements |
-| Unique users | Deduplicated subscribers, cheerers, and gifters, with their activity types |
-| Raids | Distinct raiding streamer names |
+| Unique Viewers | Deduplicated subscribers, cheerers, and gifters with their activity types, shown in the right-hand panel |
+| Raids | Each raiding streamer and the number of raids they made during the selected period |
 | Watch streaks | Highest observed streak per user, longest first |
 | Archive diagnostics | Dates checked, dates without logs, and request failures |
 

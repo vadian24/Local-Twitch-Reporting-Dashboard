@@ -6,8 +6,8 @@ const sections = {
     row: item => [item.date, item.time, item.user, item.type, item.tier] },
   cheers: { label: 'Cheers', columns: ['Username', 'Total bits'], row: item => [item.user, item.amount] },
   gifts: { label: 'Gifted subs', columns: ['Username', 'Total gifted'], row: item => [item.user, item.total] },
-  uniqueUsers: { label: 'Unique users', columns: ['Username', 'Activity'], row: item => [item.user, item.activity] },
-  raids: { label: 'Raids', columns: ['Raiding streamer'], row: item => [item.user] },
+  uniqueUsers: { label: 'Unique Viewers', columns: ['Username', 'Activity'], row: item => [item.user, item.activity] },
+  raids: { label: 'Raids', columns: ['Raiding streamer', 'Times raided'], row: item => [item.user, item.count] },
   streaks: { label: 'Watch streaks', columns: ['Username', 'Consecutive streams'],
     row: item => [item.user, item.count] },
   diagnostics: { label: 'Archive diagnostics' }
@@ -187,24 +187,33 @@ function render(report) {
   $('report-period').textContent = period.label + (period.partial ? ' · Through ' + period.endDate : '');
   const result = $('results-body');
   result.replaceChildren();
+  const showViewers = report.sections.includes('uniqueUsers');
+  $('viewers-panel').hidden = !showViewers;
+  if (showViewers) {
+    const viewers = sections.uniqueUsers;
+    const count = data.uniqueUsers.length;
+    $('viewers-count').textContent = count.toLocaleString('en-US') + (count === 1 ? ' viewer' : ' viewers') + ' with sub, cheer, or gift activity';
+    $('viewers-body').replaceChildren(...sectionTable('uniqueUsers', viewers.columns, data.uniqueUsers.map(viewers.row)));
+  }
   const metrics = {
     subscriptions: ['Subscriptions', data.subscriptions.length],
     cheers: ['Total bits', data.totalBits],
     gifts: ['Subs gifted', data.totalGifts],
-    uniqueUsers: ['Unique users', data.uniqueUsers.length],
     raids: ['Raiding streamers', data.raids.length],
     streaks: ['Longest streak', data.streaks[0]?.count ?? 0],
     diagnostics: ['Days with logs', diagnostics.successfulDays.length + ' / ' + diagnostics.daysChecked]
   };
+  const reportSections = report.sections.filter(id => id !== 'uniqueUsers');
   const summary = element('dl', undefined, 'metrics');
-  for (const id of report.sections) {
+  for (const id of reportSections) {
     const [label, value] = metrics[id];
     const item = element('div', undefined, 'metric');
     item.append(element('dt', label), element('dd', value.toLocaleString('en-US')));
     summary.append(item);
   }
-  result.append(summary);
-  for (const [index, id] of report.sections.entries()) {
+  if (reportSections.length) result.append(summary);
+  else result.append(element('p', 'Viewer activity is shown in the Unique Viewers panel.', 'viewer-empty'));
+  for (const [index, id] of reportSections.entries()) {
     const section = sections[id];
     const details = element('details', undefined, 'report-section');
     details.open = index === 0 || (id === 'diagnostics' && diagnostics.failedDays.length > 0);
@@ -295,6 +304,7 @@ async function exportReport(action, section) {
 }
 
 setup();
+window.reports.appVersion().then(version => { $('app-version').textContent = 'v' + version; });
 window.reports.onProgress(({ message, completed, total }) => {
   if (!busy) return;
   $('progress').max = total;
